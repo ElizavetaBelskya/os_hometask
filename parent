@@ -1,0 +1,44 @@
+#!/usr/bin/python3
+import sys
+import random
+import os
+
+if len(sys.argv) != 2:
+    print("Usage: python parent N")
+    os._exit(1)
+
+try:
+    N = int(sys.argv[1])
+except ValueError:
+    print("N must be a valid number.")
+    os._exit(1)
+
+
+def new_child():
+    child_pid = os.fork()
+    random_sleep = random.randint(5, 10)
+    if child_pid != 0:
+        print(f"Parent[{os.getpid()}]: I ran children process with PID {child_pid}")
+    else:
+        os.execl("./child", "./child", str(random_sleep))
+    return child_pid
+
+
+i = 0
+while i < N:
+    child_pid = new_child()
+    if child_pid != 0:
+        i += 1
+
+while i > 0:
+    try:
+        ch_pid, status = os.wait()
+        if os.WIFEXITED(status):
+            print(f"Parent[{os.getpid()}]: Child with PID {ch_pid} terminated. Exit Status {os.WEXITSTATUS(status)}")
+            i -= 1
+        else:
+            new_child()
+    except ChildProcessError:
+        break
+
+os._exit(os.EX_OK)

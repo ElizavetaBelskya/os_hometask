@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+import sys
+import random
+import os
+import time
+
+def child_process(sleep_time):
+    child_pid = os.getpid()
+    parent_pid = os.getppid()
+    print(f'Child[{child_pid}]: I am started. My PID {child_pid}. Parent PID {parent_pid}.')
+
+    time.sleep(sleep_time)
+
+    exit_status = random.choice([0, 1])
+    print(f'Child[{child_pid}]: I am ended. PID {child_pid}. Parent PID {parent_pid}.')
+    os._exit(exit_status)
+
+
+if len(sys.argv) != 2:
+    print("Usage: python child S")
+    os._exit(1)
+
+try:
+    sleep_time = float(sys.argv[1])
+except ValueError:
+    print("S must be a valid number.")
+    os._exit(1)
+
+child_process(sleep_time)
