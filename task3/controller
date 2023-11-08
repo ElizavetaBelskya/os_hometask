@@ -27,7 +27,8 @@ def main():
         os.close(pipe2_0read)
         os.close(pipe2_0write)
         os.dup2(pipe1_0write, sys.stdout.fileno())
-        os.execl("./producer", "./producer")
+        executable = "./producer"
+        os.execve(executable, [executable], {})
 
     pid_p2 = os.fork()
     if pid_p2 == 0:
@@ -38,7 +39,8 @@ def main():
 
         os.dup2(pipe0_2read, sys.stdin.fileno())
         os.dup2(pipe2_0write, sys.stdout.fileno())
-        os.execl("/usr/bin/bc", "bc")
+        executable = "/usr/bin/bc"
+        os.execve(executable, [executable], {})
 
     os.close(pipe1_0write)
     os.close(pipe2_0write)
