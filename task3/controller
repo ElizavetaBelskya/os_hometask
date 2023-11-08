@@ -1,0 +1,66 @@
+#!/usr/bin/python3
+import os
+import sys
+import signal
+
+expression_count = 0
+
+
+def sigusr1_handler(signum, frame):
+    global expression_count
+    sys.stderr.write(f"Produced: {expression_count}\n")
+
+
+def main():
+    global expression_count
+    pipe0_2read, pipe0_2write = os.pipe()
+    pipe1_0read, pipe1_0write = os.pipe()
+    pipe2_0read, pipe2_0write = os.pipe()
+    signal.signal(signal.SIGUSR1, sigusr1_handler)
+
+    pid_p1 = os.fork()
+
+    if pid_p1 == 0:
+        os.close(pipe1_0read)
+        os.close(pipe0_2read)
+        os.close(pipe0_2write)
+        os.close(pipe2_0read)
+        os.close(pipe2_0write)
+        os.dup2(pipe1_0write, sys.stdout.fileno())
+        os.execl("./producer", "./producer")
+
+    pid_p2 = os.fork()
+    if pid_p2 == 0:
+        os.close(pipe1_0read)
+        os.close(pipe0_2write)
+        os.close(pipe1_0write)
+        os.close(pipe2_0read)
+
+        os.dup2(pipe0_2read, sys.stdin.fileno())
+        os.dup2(pipe2_0write, sys.stdout.fileno())
+        os.execl("/usr/bin/bc", "bc")
+
+    os.close(pipe1_0write)
+    os.close(pipe2_0write)
+    os.close(pipe0_2read)
+    while True:
+        arithmetic_expression = os.read(pipe1_0read, 6)
+        if not arithmetic_expression:
+            break
+        expression_count += 1
+        os.write(pipe0_2write, arithmetic_expression)
+        result_from_bc = os.read(pipe2_0read, 3)
+        if result_from_bc:
+            ar_exp = arithmetic_expression.decode()
+            ready_exp = ar_exp.replace('\n', '')
+            formatted_result = f"{ready_exp} = {result_from_bc.decode()}"
+            sys.stdout.write(formatted_result)
+
+    os.kill(pid_p1, signal.SIGTERM)
+    os.wait()
+    os.kill(pid_p2, signal.SIGTERM)
+    os.wait()
+
+
+if __name__ == "__main__":
+    main()
