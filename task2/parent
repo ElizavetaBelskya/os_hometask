@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+
 import sys
 import random
 import os
@@ -20,7 +21,7 @@ def new_child():
     if child_pid != 0:
         print(f"Parent[{os.getpid()}]: I ran children process with PID {child_pid}")
     else:
-        os.execl("./child", "./child", str(random_sleep))
+        os.execve("./child", ["./child", str(random_sleep)], {})
     return child_pid
 
 
